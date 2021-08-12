@@ -1,5 +1,6 @@
 #!/bin/bash
 
+
 mothur "#make.file(inputdir=., type=fastq, prefix=stability)"
 
 mothur "#make.contigs(file=stability.files, processors=5)"

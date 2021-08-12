@@ -29,12 +29,12 @@ mothur. This workflow can be visualised in the diagram below. </p>
 
 <h2 id="Programs Used">Programs Used</h2>
 
-<b> **FastQC v0.11.9**
-<br>**Cutadapt v3.4**
-<br>**Mothur v1.45.2** </b>
+<b> **FastQC (v0.11.9)**
+<br>**Cutadapt (v3.4)**
+<br>**Mothur (v1.45.2)** </b>
 
 <h2 id="Scripts">Scripts</h2>
 
-<b> trimprimers.nf:</b> Trims raw paired end reads
-<br><b>16Smothur.sh:</b>Creates OTU and Taxonomy Table
-<br><b>OTUanalysis.Rmd:</b>Analysis using vegan, phyloseq and mobr
+<b> trimprimers.nf:</b> Trims raw paired end reads.
+<br><b>16Smothur.sh:</b> Sequence alignment and OTU clustering. Silva alignment database needed.
+<br><b>OTUanalysis.Rmd:</b> Analysis using vegan, phyloseq and mobr.
