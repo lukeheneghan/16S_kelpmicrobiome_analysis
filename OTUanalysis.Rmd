@@ -1,0 +1,181 @@
+---
+title: "16S Analysis"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+if (!requireNamespace("BiocManager", quietly = TRUE))
+  install.packages("BiocManager")
+BiocManager::install("phyloseq")
+library("phyloseq"); packageVersion("phyloseq")
+library("mobr")
+library("vegan")
+library("ggplot2"); packageVersion("ggplot2")
+library("plyr"); packageVersion("plyr")
+theme_set(theme_bw())  # set the ggplot theme
+library("tidyverse")
+library("readxl")
+library("matrixcalc")
+```
+
+
+Importing mothur formatted files:
+```{r}
+otu.table <- import_mothur(mothur_shared_file = "mothur/stability.trim.contigs.good.unique.good.filter.unique.precluster.pick.pick.opti_mcc.shared") ## OTU Table
+tax.table <- import_mothur(mothur_constaxonomy_file = "mothur/stability.trim.contigs.good.unique.good.filter.unique.precluster.pick.pick.opti_mcc.0.03.cons.taxonomy") ## Taxonomy Table
+phy.tree <- import_mothur(mothur_tree_file="mothur/stability.trim.contigs.good.unique.good.filter.unique.precluster.pick.pick.opti_mcc.jclass.0.03.tre.tre") ## Phylogenetic Tree
+
+```
+
+
+Checking final sequence counts for each sample:
+```{r}
+sample_sums(otu.table)
+```
+
+
+Importing personally adjusted OTU table and metadata, which contains most abundant OTUs:
+```{r}
+OTU1 <- read.csv("OTUs.csv", header = T)
+OTU2 <- as.data.frame(t(OTU1[,c(2,4:2080)]))
+names(OTU2) <- OTU2[1,]
+OTU2 <- OTU2[-1,]
+OTU3 <- data.matrix(OTU2)
+
+otu.table.adjusted <- otu_table(OTU3, taxa_are_rows = T)
+
+sample.kelp <- read.delim("samples.txt")
+row.names(sample.kelp) <- c("LOST1","LOST2","LOST3","LOHF1","LOHF2","LOHF3","LHST2","LHST3","LHHF1","LHHF2","LHHF3")
+metadata <- sample_data(sample.kelp)
+```
+
+Creating Phyloseq Objects:
+```{r}
+kelp16s = phyloseq(otu_table(otu.table)[,c(1:3,5:12)] , tax.table, metadata)
+kelp16s.adjusted = phyloseq(otu_table(otu.table.adjusted)[,c(1:3,5:12)] , tax.table, metadata)
+kelp16s.relativecounts  = transform_sample_counts(kelp16s, function(x) x / sum(x) )
+```
+
+Creating a phyloseq object and OTU table with similar sample types merged:
+```{r}
+merged.kelp16s = merge_samples(kelp16s, "SampleType")
+merged.otus <- data.frame(otu_table(merged.kelp16s))
+
+merged.kelp16s.adjusted = merge_samples(kelp16s.adjusted, "SampleType")
+merged.otus.adjusted <- data.frame(otu_table(merged.kelp16s.adjusted))
+```
+
+
+Basic stats about phyloseq objects:
+```{r}
+ntaxa(kelp16s)
+nsamples(kelp16s)
+sample_names(kelp16s)
+rank_names(kelp16s)
+taxa_names(kelp16s)[1:10]
+
+ntaxa(kelp16s.adjusted)
+nsamples(kelp16s.adjusted)
+sample_names(kelp16s.adjusted)
+
+ntaxa(merged.kelp16s)
+nsamples(merged.kelp16s)
+sample_names(merged.kelp16s)
+```
+
+Rank1: Phylum
+Rank2: Class
+Rank3: Order
+Rank4: Family
+Rank5: Genus
+
+Creating Barcharts of top 5 OTUs from each sample:
+```{r}
+barchart.OTUs <- (otu_table(merged.kelp16s.adjusted)[,c(1:15,17,19,21:22,34,51,58,146)])
+barchart.OTUs
+barchart = phyloseq(otu_table(barchart.OTUs), tax_table(merged.kelp16s.adjusted))
+plot_bar(barchart, fill = "Rank2") ## Barchart of Classes
+plot_bar(barchart, fill = "Rank3") ## Barchart of Orders
+plot_bar(barchart, fill = "Rank4") ## Barchart of Families
+plot_bar(barchart, fill = "Rank5") ## Barchart of Genus
+```
+
+Creating NMDS plots grouped by OTU:
+```{r}
+kelp.ord <- ordinate(kelp16s, "NMDS", "bray")
+p1 = plot_ordination(kelp16s, kelp.ord, type="taxa", color="Rank2", title="Taxa")
+print(p1)
+p1 + facet_wrap(~Rank2, 3)
+```
+
+Creating NMDS plots grouped by sample:
+```{r}
+Stipe = get_variable(kelp16s, "SampleType") %in% c("LH-Stipe","LO-Stipe")
+sample_data(kelp16s.adjusted)$Stipe <- factor(Stipe)
+p2 = plot_ordination(kelp16s, kelp.ord, type="samples", color="SampleType", shape = "Stipe")
+p2 + geom_polygon(aes(fill=SampleType)) + geom_point(size=5) + ggtitle("Species and Thallus Region")
+```
+
+Calculating and Plotting Bacterial Evenness of Sample Types:
+```{r}
+diversity1 <- calc_PIE(merged.otus, ENS = T)
+diversity1
+barplot(diversity1, space = 0.5, col = c("maroon"), xlab = "Sample Names", ylab = "S_PIE", main = "Bacterial Species Evenness", ylim = c(0,130))
+```
+
+Calculating and Plotting Bacterial Richness of Sample Types:
+```{r}
+richness <- estimate_richness(merged.kelp16s, split = TRUE, measures = NULL)
+richness1 <- data.frame(richness[,2:3])
+geom_bar(mapping = NULL, data = richness1, stat = "count", position = "stack", width = NULL, na.rm = FALSE, orientation = NA, show.legend = NA, inherit.aes = TRUE)
+
+ggplot(richness1,
+       aes(x=rownames(richness1), y=Chao1)) +
+  #geom_bar( aes(x=rownames(richness1), y=Chao1), stat="identity", fill="skyblue", alpha=0.5) +
+  geom_bar(stat='identity' ,fill="coral1", alpha=0.9) +
+  xlab("Sample Type") +
+  ggtitle("Bacterial Species Richness") +
+  geom_errorbar(aes(ymin=Chao1-se.chao1, ymax=Chao1+se.chao1), width=0.3)
+```
+
+Plotting overall alpha diversity of samples:
+```{r}
+plot_richness(kelp16s, x="SampleType", measures=c("Chao1"))
+```
+
+
+
+Plotting Rarefaction Curve of Alpha Diversity of Sample Types:
+```{r}
+##rarecurve(merged.otus, step=1, xlab = "Seq. Depth", ylab = "No. of OTUs")
+```
+
+ANOSIM test for species and thallus region:
+```{r}
+otu.table.2 <- data.frame(otu.table)
+otu.table.full <- as.data.frame(t(otu.table.2))
+mat.otu.table2 <- as.matrix(otu.table.full)
+species <- c("L.Hyperborea","L.Hyperborea","L.Hyperborea","L.Hyperborea","L.Hyperborea","L.Hyperborea","L.Ochroleuca","L.Ochroleuca","L.Ochroleuca","L.Ochroleuca","L.Ochroleuca","L.Ochroleuca")
+thallus <- c("Holdfast","Holdfast","Holdfast","Stipe","Stipe","Stipe","Holdfast","Holdfast","Holdfast","Stipe","Stipe","Stipe")
+otu.table2$species <- species
+otu.table2$thallus <- thallus
+ano.species = anosim(mat.otu.table2, otu.table2$species, distance = "bray", permutations = 9999)
+ano.species
+ano.thallus = anosim(mat.otu.table2, otu.table2$thallus, distance = "bray", permutations = 9999)
+ano.thallus
+
+```
+
+ANOSIM test for stipe and holdfast samples only:
+```{r}
+mat.stipes <- as.matrix(mat.otu.table2[c(4:6,10:12),])
+otu.table.stipes <- data.frame(otu.table2[c(4:6,10:12),])
+ano.stipes = anosim(mat.stipes, otu.table.stipes$species, distance = "bray", permutations = 719)
+ano.stipes
+
+mat.holdfasts <- as.matrix(mat.otu.table2[c(1:3,7:9),])
+otu.table.holdfasts <- data.frame(otu.table2[c(1:3,7:9),])
+ano.holdfasts = anosim(mat.holdfasts, otu.table.holdfasts$species, distance = "bray", permutations = 719)
+ano.holdfasts
+```
