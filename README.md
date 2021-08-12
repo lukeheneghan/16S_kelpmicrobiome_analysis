@@ -4,21 +4,23 @@
 <meta charset="utf-8"/>
 </head>
 <body>
-<h1 id="Title">Variant Prioritisation</h1>
+<h1 id="Title">16S Analysis of Invasive and Native Kelp Microbiome</h1>
 
 <h2 id="Objective">Objective</h2>
 
-<p>The primary objective of this clinical variant prioritisation web application 
-  is to improve upon the limited functionality of GAVIN and other popular variant
-  calling/prioritisation tools. The application provides a tiered system ranking variants 
-  in terms of their pathogenicity and role in known diseases, as well as providing additional 
-  functionality such as summary reports of metrics used in variant classification 
-  (e.g., quality, depth and allele frequency). 
-  The application provides a clinician/user with the ability to filter by gene panels, 
-  and query affected genes via the OMIM API, returning gene-phenotype information supported by literature. 
-  As there is a veritable need for improvements to current variant prioritisation and visualisation methods, 
-  this project will provide substantial positive progress to the movement 
-  for improved sequence variant annotation and prioritisation from NGS projects.</p>
+<p> The primary objective of this 16S rRNA pipeline is to assess the microbial diversity 
+of the biofilms of a native kelp species Laminaria Hyperborea, and an invasive species 
+Laminaria Ochroleuca. Through this assessment, we can learn more about how the invasive 
+species of kelp may have been successful in its' invasion, through comparison with the 
+microbiome of the native species. This was done by 16S rRNA gene sequencing of DNA swabs 
+taken from the biofilm of both the stipe and holdfast regions of the thallus of each 
+species. 
+
+This will then be followed by a statistical analysis of the bacterial taxa present in 
+their respective biofilms. By comparing and contrasting these microbiomes, as well as 
+comparing the microbiomes of the stipes and holdfasts, we can assess any important 
+differences in the microbiomes of the two species, which may explain the success of 
+Laminaria Ochroleuca's invasion of the region.</p>
 
 <h2 id="Project Workflow">Project Workflow</h2>
 
